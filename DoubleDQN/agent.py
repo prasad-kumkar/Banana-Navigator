@@ -15,6 +15,8 @@ UPDATE_EVERY = 4
 BUFFER_SIZE = int(1e5)
 BATCH_SIZE = 64
 
+device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+
 class Agent:
 
     def __init__(self, state_size, action_size, seed):
@@ -95,11 +97,11 @@ class ReplayBuffer:
     def sample(self):
         e = random.sample(self.memory, k=self.batch_size)
         
-        states = torch.from_numpy(np.vstack([i.state for i in e if i is not None]))
-        actions = torch.from_numpy(np.vstack([i.action for i in e if i is not None]))
-        rewards = torch.from_numpy(np.vstack([i.reward for i in e if i is not None]))
-        next_states = torch.from_numpy(np.vstack([i.next_state for i in e if i is not None]))
-        dones = torch.from_numpy(np.vstack([i.done for i in e if i is not None]))
+        states = torch.from_numpy(np.vstack([i.state for i in e if i is not None])).float().to(device)
+        actions = torch.from_numpy(np.vstack([i.action for i in e if i is not None])).long().to(device)
+        rewards = torch.from_numpy(np.vstack([i.reward for i in e if i is not None])).float().to(device)
+        next_states = torch.from_numpy(np.vstack([i.next_state for i in e if i is not None])).float().to(device)
+        dones = torch.from_numpy(np.vstack([i.done for i in e if i is not None])).astype(np.uint8)).float().to(device)
         
         return (states, actions, rewards, next_states, dones)
 
