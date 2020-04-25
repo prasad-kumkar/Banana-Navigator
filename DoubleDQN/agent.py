@@ -24,8 +24,9 @@ class Agent:
         self.action_size = action_size 
         self.seed = random.seed(seed)
 
-        self.q_local = QNetwork(state_size, action_size, seed)
-        self.q_target = QNetwork(state_size, action_size, seed)
+        self.q_local = QNetwork(state_size, action_size, seed).to(device)
+        self.q_target = QNetwork(state_size, action_size, seed).to(device)
+        self.q_target.eval()
         self.optimizer = optim.Adam(self.q_local.parameters(), lr=LR)
         self.memory = ReplayBuffer(action_size, BUFFER_SIZE, BATCH_SIZE, seed)
 
@@ -42,7 +43,7 @@ class Agent:
                 self.learn(e)
 
     def act(self, state, epsilon):
-        state = torch.from_numpy(state).float().unsqueeze(0)        #Get state
+        state = torch.from_numpy(state).float().unsqueeze(0).to(device)        #Get state
         self.q_local.eval()                                         #Set Q_local in evaluate mode
         #Equivalent to q_local.train(False)
         with torch.no_grad():                                       #Get Action values
@@ -52,15 +53,15 @@ class Agent:
         if random.random()>epsilon:
             return np.argmax(action_values.cpu().data.numpy())
         else:
-            return random.choice(np.arange(self.action_size))
+            return random.choice(np.arange(self.action_size)).astype(np.int_)
     
     def learn(self, experiences, gamma=GAMMA):
         states, actions, rewards, next_states, dones = experiences
 
         #TD target
-        best_actions = self.q_target(next_states).detach().max(1)[1].unsqueeze(1)
-        evaluations = self.q_local(next_states).gather(1, best_actions) 
-        Q_target = rewards + evaluations*gamma*(~dones)
+        best_actions = self.q_local(next_states).detach().max(1)[1].unsqueeze(1)
+        evaluations = self.q_target(next_states).gather(1, best_actions) 
+        Q_target = rewards + evaluations*gamma*(1-dones)
 
         #Currently predicted Q value
         Q_expected = self.q_local(states).gather(1, actions)
@@ -101,7 +102,7 @@ class ReplayBuffer:
         actions = torch.from_numpy(np.vstack([i.action for i in e if i is not None])).long().to(device)
         rewards = torch.from_numpy(np.vstack([i.reward for i in e if i is not None])).float().to(device)
         next_states = torch.from_numpy(np.vstack([i.next_state for i in e if i is not None])).float().to(device)
-        dones = torch.from_numpy(np.vstack([i.done for i in e if i is not None])).astype(np.uint8)).float().to(device)
+        dones = torch.from_numpy(np.vstack([i.done for i in e if i is not None]).astype(np.uint8)).float().to(device)
         
         return (states, actions, rewards, next_states, dones)
 

@@ -6,7 +6,7 @@ import torch
 
 from agent import Agent
 from model import QNetwork
-env = UnityEnvironment(file_name="Banana_Linux/Banana.x86_64")
+env = UnityEnvironment(file_name="/Users/prasad/Desktop/DRL Projects/Banana-Navigator/DoubleDQN/Banana.app")
 
 brain_name = env.brain_names[0]
 brain = env.brains[brain_name]
@@ -18,7 +18,6 @@ state_size = len(state)
 
 agent = Agent(state_size, action_size, seed = 100)
 
-
 def plot_result(score):
     fig = plt.figure()
     ax = fig.add_subplot(111)
@@ -27,8 +26,7 @@ def plot_result(score):
     plt.xlabel('EPISODE')
     plt.show()
 
-
-def training(n_episodes=100,max_t=1000, eps_start=1.0, eps_end=0.01, eps_decay=0.995):
+def training(n_episodes=300,max_t=200, eps_start=1.0, eps_end=0.01, eps_decay=0.995):
     scores=[]
     scores_window = deque(maxlen=100)
     eps = eps_start
